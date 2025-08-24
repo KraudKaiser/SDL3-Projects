@@ -43,6 +43,8 @@ SDL_Renderer* gRenderer{ nullptr };
 
 LTexture gPngTexture;
 
+LTexture gUpTexture, gDownTexture, gLeftTexture, gRightTexture;
+
 
 /* Class Implementations */
 //LTexture Implementation
@@ -148,7 +150,19 @@ bool loadMedia(){
 
 	/*Load Image splash*/
 	
-	if (gPngTexture.loadFromFile("D:\\Descargas\\Director cosas\\Presentaciones Misiones\\1332513117149597816.png") == false) {
+	if (gUpTexture.loadFromFile("D:\\Descargas\\03-key-presses-and-key-states\\03-key-presses-and-key-states\\up.png") == false) {
+		SDL_Log("Unable to load png image!\n");
+		success = false;
+	}
+	if (gDownTexture.loadFromFile("D:\\Descargas\\03-key-presses-and-key-states\\03-key-presses-and-key-states\\down.png") == false) {
+		SDL_Log("Unable to load png image!\n");
+		success = false;
+	}
+	if (gLeftTexture.loadFromFile("D:\\Descargas\\03-key-presses-and-key-states\\03-key-presses-and-key-states\\left.png") == false) {
+		SDL_Log("Unable to load png image!\n");
+		success = false;
+	}
+	if (gRightTexture.loadFromFile("D:\\Descargas\\03-key-presses-and-key-states\\03-key-presses-and-key-states\\right.png") == false) {
 		SDL_Log("Unable to load png image!\n");
 		success = false;
 	}
@@ -195,6 +209,10 @@ int SDL_main(int argc, char* argv[]) {
 			SDL_Event e;
 			SDL_zero(e);
 
+			LTexture* currentTexture = &gUpTexture;
+
+			SDL_Color bgColor{ 0xFF, 0xFF, 0xFF, 0xFF };
+
 			while (quit == false) {
 				/*get Event Data*/
 				while (SDL_PollEvent(&e) == true) {
@@ -202,15 +220,68 @@ int SDL_main(int argc, char* argv[]) {
 					if (e.type == SDL_EVENT_QUIT) {
 						quit = true;
 					}
+
+					else if (e.type == SDL_EVENT_KEY_DOWN) {
+						if (e.key.key == SDLK_UP) {
+							currentTexture = &gUpTexture;
+						}
+						else if (e.key.key == SDLK_DOWN) {
+							currentTexture = &gDownTexture;
+						}
+						else if (e.key.key == SDLK_LEFT) {
+							currentTexture = &gLeftTexture;
+						}
+						else if (e.key.key == SDLK_RIGHT) {
+							currentTexture = &gRightTexture;
+						}
+					}
+				}
+				//Sets background to white
+				bgColor.r == 0xFF;
+				bgColor.g == 0xFF;
+				bgColor.b == 0xFF;
+
+				//Set background depending on key pressed
+				const bool* keyStates = SDL_GetKeyboardState(nullptr);
+
+				//Checks up is pressed
+				if (keyStates[SDL_SCANCODE_UP] == true) {
+					//Red
+					bgColor.r = 0xFF;
+					bgColor.g = 0x00;
+					bgColor.b = 0x00;
+				}
+				else if (keyStates[SDL_SCANCODE_DOWN] == true)
+				{
+					//Green
+					bgColor.r = 0x00;
+					bgColor.g = 0xFF;
+					bgColor.b = 0x00;
+				}
+				else if (keyStates[SDL_SCANCODE_LEFT] == true)
+				{
+					//Yellow
+					bgColor.r = 0xFF;
+					bgColor.g = 0xFF;
+					bgColor.b = 0x00;
+				}
+				else if (keyStates[SDL_SCANCODE_RIGHT] == true)
+				{
+					//Blue
+					bgColor.r = 0x00;
+					bgColor.g = 0x00;
+					bgColor.b = 0xFF;
 				}
 
 				/*fill the surface with white*/
-				SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
+				SDL_SetRenderDrawColor(gRenderer, bgColor.r, bgColor.g, bgColor.b, 0xFF);
 				SDL_RenderClear(gRenderer);
 
-				//Render image on screen
-				gPngTexture.render(0.f, 0.f);
+				//Render image of keyboard presses
 
+				currentTexture->render((kScreenWidth - currentTexture->getWidth()) / 2.f, (kScreenHeight - currentTexture->getHeight()) / 2.f);
+				
+				
 				/*Update screen*/
 				SDL_RenderPresent(gRenderer);
 			} /*end of quit while*/
