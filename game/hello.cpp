@@ -41,10 +41,9 @@ SDL_Window* gWindow{ nullptr };
 /*renderer to draw window*/
 SDL_Renderer* gRenderer{ nullptr };
 
-LTexture gPngTexture;
 
-LTexture gUpTexture, gDownTexture, gLeftTexture, gRightTexture;
-
+LTexture gCharacterTexture;
+LTexture gBackgroundTexture;
 
 /* Class Implementations */
 //LTexture Implementation
@@ -72,15 +71,22 @@ bool LTexture::loadFromFile(std::string path) {
 		
 	}
 	else {
-		//Create texture from surface
-		if (mTexture = SDL_CreateTextureFromSurface(gRenderer, loadedSurface); mTexture == nullptr) {
-			SDL_Log("Unable to create texture from loaded pixels! SDL error: %s\n", SDL_GetError());
+		//Color key image
+		//Handle error of color Key
+		if (SDL_SetSurfaceColorKey(loadedSurface, true, SDL_MapSurfaceRGB(loadedSurface, 0x00, 0xFF, 0xFF)) == false) {
+			SDL_Log("Unable to Color Key! SDL error: %s", SDL_GetError());
 		}
 		else {
-			//get image 
-			mWidth = loadedSurface->w;
-			mHeight = loadedSurface->h;
+			//Handle error creating texture
+			if (mTexture = SDL_CreateTextureFromSurface(gRenderer, loadedSurface); mTexture == nullptr) {
+				SDL_Log("Unable to create texture from loaded pixels! SDL error: %s\n", SDL_GetError());
+			}
+			else {
+				mWidth = loadedSurface->w;
+				mHeight = loadedSurface->h;
+			}
 		}
+
 
 		//clean up loaded surface
 		SDL_DestroySurface(loadedSurface);
@@ -135,7 +141,7 @@ bool init() {
 	}
 	else {
 		/*We create the window in the conditional and then check if created correctly*/
-		if (SDL_CreateWindowAndRenderer("SDL 3 Tutorial: Textures and Extension Libraries", kScreenWidth, kScreenHeight, 0, &gWindow, &gRenderer) == false) {
+		if (SDL_CreateWindowAndRenderer("SDL 3 Tutorial:Color Keying", kScreenWidth, kScreenHeight, 0, &gWindow, &gRenderer) == false) {
 			SDL_Log("Window could not be created! SDL Error: %s\n", SDL_GetError());
 			success = false;
 		}
@@ -150,28 +156,20 @@ bool loadMedia(){
 
 	/*Load Image splash*/
 	
-	if (gUpTexture.loadFromFile("D:\\Descargas\\03-key-presses-and-key-states\\03-key-presses-and-key-states\\up.png") == false) {
+	if (gCharacterTexture.loadFromFile("D:\\Descargas\\04-color-keying\\04-color-keying\\foo.png") == false) {
 		SDL_Log("Unable to load png image!\n");
 		success = false;
 	}
-	if (gDownTexture.loadFromFile("D:\\Descargas\\03-key-presses-and-key-states\\03-key-presses-and-key-states\\down.png") == false) {
+	if (gBackgroundTexture.loadFromFile("D:\\Descargas\\04-color-keying\\04-color-keying\\background.png") == false) {
 		SDL_Log("Unable to load png image!\n");
 		success = false;
 	}
-	if (gLeftTexture.loadFromFile("D:\\Descargas\\03-key-presses-and-key-states\\03-key-presses-and-key-states\\left.png") == false) {
-		SDL_Log("Unable to load png image!\n");
-		success = false;
-	}
-	if (gRightTexture.loadFromFile("D:\\Descargas\\03-key-presses-and-key-states\\03-key-presses-and-key-states\\right.png") == false) {
-		SDL_Log("Unable to load png image!\n");
-		success = false;
-	}
+	
 	return success;
 }
 
 void close() {
 	/*now cleans up texture*/
-	gPngTexture.destroy();
 
 	//destroy window 
 	SDL_DestroyRenderer(gRenderer);
@@ -209,8 +207,6 @@ int SDL_main(int argc, char* argv[]) {
 			SDL_Event e;
 			SDL_zero(e);
 
-			LTexture* currentTexture = &gUpTexture;
-
 			SDL_Color bgColor{ 0xFF, 0xFF, 0xFF, 0xFF };
 
 			while (quit == false) {
@@ -222,64 +218,23 @@ int SDL_main(int argc, char* argv[]) {
 					}
 
 					else if (e.type == SDL_EVENT_KEY_DOWN) {
-						if (e.key.key == SDLK_UP) {
-							currentTexture = &gUpTexture;
-						}
-						else if (e.key.key == SDLK_DOWN) {
-							currentTexture = &gDownTexture;
-						}
-						else if (e.key.key == SDLK_LEFT) {
-							currentTexture = &gLeftTexture;
-						}
-						else if (e.key.key == SDLK_RIGHT) {
-							currentTexture = &gRightTexture;
-						}
+						//Key pressed system
 					}
 				}
-				//Sets background to white
-				bgColor.r == 0xFF;
-				bgColor.g == 0xFF;
-				bgColor.b == 0xFF;
+				
 
 				//Set background depending on key pressed
 				const bool* keyStates = SDL_GetKeyboardState(nullptr);
 
-				//Checks up is pressed
-				if (keyStates[SDL_SCANCODE_UP] == true) {
-					//Red
-					bgColor.r = 0xFF;
-					bgColor.g = 0x00;
-					bgColor.b = 0x00;
-				}
-				else if (keyStates[SDL_SCANCODE_DOWN] == true)
-				{
-					//Green
-					bgColor.r = 0x00;
-					bgColor.g = 0xFF;
-					bgColor.b = 0x00;
-				}
-				else if (keyStates[SDL_SCANCODE_LEFT] == true)
-				{
-					//Yellow
-					bgColor.r = 0xFF;
-					bgColor.g = 0xFF;
-					bgColor.b = 0x00;
-				}
-				else if (keyStates[SDL_SCANCODE_RIGHT] == true)
-				{
-					//Blue
-					bgColor.r = 0x00;
-					bgColor.g = 0x00;
-					bgColor.b = 0xFF;
-				}
-
+				
 				/*fill the surface with white*/
-				SDL_SetRenderDrawColor(gRenderer, bgColor.r, bgColor.g, bgColor.b, 0xFF);
+				SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
 				SDL_RenderClear(gRenderer);
 
-				//Render image of keyboard presses
+				gBackgroundTexture.render(0.f, 0.f);
+				gCharacterTexture.render(240.f, 190.f);
 
-				currentTexture->render((kScreenWidth - currentTexture->getWidth()) / 2.f, (kScreenHeight - currentTexture->getHeight()) / 2.f);
+				
 				
 				
 				/*Update screen*/
