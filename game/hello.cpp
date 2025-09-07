@@ -5,6 +5,7 @@
 
 class LTexture {
 public:
+	static constexpr float kOriginalSize = -1.f;
 	/*initializes texture variables*/
 	LTexture();
 
@@ -17,7 +18,7 @@ public:
 	/*cleans texture*/
 	void destroy();
 	//Draws texture
-	void render(float x, float y);
+	void render(float x, float y, SDL_FRect* clip = nullptr, float width = kOriginalSize, float height = kOriginalSize);
 
 	int getWidth();
 	int getHeight();
@@ -29,6 +30,8 @@ private:
 	int mWidth;
 	int mHeight;
 };
+
+
 
 constexpr int kScreenWidth{ 640 };
 constexpr int kScreenHeight{ 480 };
@@ -42,8 +45,8 @@ SDL_Window* gWindow{ nullptr };
 SDL_Renderer* gRenderer{ nullptr };
 
 
-LTexture gCharacterTexture;
-LTexture gBackgroundTexture;
+LTexture gSpriteSheetTexture;
+
 
 /* Class Implementations */
 //LTexture Implementation
@@ -103,12 +106,27 @@ void LTexture::destroy() {
 	mHeight = 0;
 }
 
-void LTexture::render(float x, float y) {
+void LTexture::render(float x, float y, SDL_FRect* clip, float width, float height) {
 	//set texture position
 	SDL_FRect dstRect{ x,y, static_cast<float>(mWidth), static_cast<float>(mHeight) };
 
+	//we set default clip dimensions if clip is given
+	if (clip != nullptr) {
+		dstRect.w = clip->w;
+		dstRect.h = clip->h;
+	}
+
+	//resize if new dimensions are given
+
+	if (width > 0) {
+		dstRect.w = width;
+	}
+	if (height > 0) {
+		dstRect.h = height;
+	}
+
 	//Render Texture
-	SDL_RenderTexture(gRenderer, mTexture, nullptr, &dstRect);
+	SDL_RenderTexture(gRenderer, mTexture, clip, &dstRect);
 }
 
 int LTexture::getWidth()
@@ -141,7 +159,7 @@ bool init() {
 	}
 	else {
 		/*We create the window in the conditional and then check if created correctly*/
-		if (SDL_CreateWindowAndRenderer("SDL 3 Tutorial:Color Keying", kScreenWidth, kScreenHeight, 0, &gWindow, &gRenderer) == false) {
+		if (SDL_CreateWindowAndRenderer("SDL 3 Tutorial:Sprite Clipping", kScreenWidth, kScreenHeight, 0, &gWindow, &gRenderer) == false) {
 			SDL_Log("Window could not be created! SDL Error: %s\n", SDL_GetError());
 			success = false;
 		}
@@ -156,21 +174,18 @@ bool loadMedia(){
 
 	/*Load Image splash*/
 	
-	if (gCharacterTexture.loadFromFile("D:\\Descargas\\04-color-keying\\04-color-keying\\foo.png") == false) {
+	if (gSpriteSheetTexture.loadFromFile("D:\\Descargas\\textureExample.png") == false) {
 		SDL_Log("Unable to load png image!\n");
 		success = false;
 	}
-	if (gBackgroundTexture.loadFromFile("D:\\Descargas\\04-color-keying\\04-color-keying\\background.png") == false) {
-		SDL_Log("Unable to load png image!\n");
-		success = false;
-	}
+	
 	
 	return success;
 }
 
 void close() {
 	/*now cleans up texture*/
-
+	gSpriteSheetTexture.destroy();
 	//destroy window 
 	SDL_DestroyRenderer(gRenderer);
 	gRenderer = nullptr;
@@ -231,11 +246,50 @@ int SDL_main(int argc, char* argv[]) {
 				SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
 				SDL_RenderClear(gRenderer);
 
-				gBackgroundTexture.render(0.f, 0.f);
-				gCharacterTexture.render(240.f, 190.f);
+				//We init sprite clip
 
+				constexpr float kSpriteSize = 100.f;
+				SDL_FRect spriteClip{ 0.f, 0.f, kSpriteSize, kSpriteSize };
+
+				SDL_FRect spriteSize{ 0.f, 0.f, kSpriteSize, kSpriteSize };
 				
+
+				//Left top corner of Circles. Red Circle
+				spriteClip.x = 0.f;
+				spriteClip.y = 0.f;
+
+				spriteSize.w = kSpriteSize;
+				spriteSize.h = kSpriteSize;
+
+				gSpriteSheetTexture.render(0.f, 0.f, &spriteClip, spriteSize.w, spriteSize.h);
+
+				//Render Right Top Circle. 
+				spriteClip.x = kSpriteSize;
+				spriteClip.y = 0.f;
+
+				spriteSize.w = kSpriteSize;
+				spriteSize.h = kSpriteSize;
+				gSpriteSheetTexture.render(kSpriteSize, 0.f, &spriteClip, spriteSize.w, spriteSize.h);
+
+
+				//Render Bottom Left Circle.
+				spriteClip.x = 0.f;
+				spriteClip.y = kSpriteSize;
+
+				spriteSize.w = kSpriteSize;
+				spriteSize.h = kSpriteSize;
 				
+				gSpriteSheetTexture.render(0.f, kSpriteSize, &spriteClip, spriteSize.w, spriteSize.h);
+				//Render Bottom Left Circle.
+
+
+				spriteClip.x = kSpriteSize;
+				spriteClip.y = kSpriteSize;
+
+				spriteSize.w = kSpriteSize;
+				spriteSize.h = kSpriteSize;
+				gSpriteSheetTexture.render(kSpriteSize, kSpriteSize, & spriteClip, spriteSize.w, spriteSize.h);
+
 				
 				/*Update screen*/
 				SDL_RenderPresent(gRenderer);
